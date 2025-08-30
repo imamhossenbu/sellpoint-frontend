@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+/* -------------------------------------------
+   SellPoint brand palette as CSS variables
+------------------------------------------- */
+:root {
+    --sp-primary: #1A2A80;
+    /* deep brand */
+    --sp-primary-alt: #3B38A0;
+    /* buttons / accents */
+    --sp-accent: #7A85C1;
+    /* subtle text/accents */
+    --sp-light: #B2B0E8;
+    /* borders/dividers */
+
+    /* RGB for alpha overlays/gradients/shadows */
+    --sp-primary-rgb: 26, 42, 128;
+    --sp-primary-alt-rgb: 59, 56, 160;
+    --sp-accent-rgb: 122, 133, 193;
+    --sp-light-rgb: 178, 176, 232;
+}
+
+/* -------------------------------------------
+   Soft page surfaces (avoid matching navbar)
+------------------------------------------- */
+.page-surface {
+    /* very light tints so content feels airy on top of the bold nav */
+    --sp-surface-top: #F7F8FF;
+    --sp-surface-mid: #FBFBFF;
+    --sp-surface-bottom: #FFFFFF;
+
+    background:
+        /* super subtle brand blobs */
+        radial-gradient(60% 60% at 15% 10%, rgba(var(--sp-primary-rgb), 0.06) 0%, transparent 60%),
+        radial-gradient(60% 60% at 85% 90%, rgba(var(--sp-primary-alt-rgb), 0.06) 0%, transparent 60%),
+        /* soft vertical wash */
+        linear-gradient(180deg, var(--sp-surface-top) 0%, var(--sp-surface-mid) 40%, var(--sp-surface-bottom) 100%);
+}
+
+
+/* -------------------------------------------
+   Tiny base polish (keeps Tailwind first)
+------------------------------------------- */
+::selection {
+    background: rgba(var(--sp-primary-rgb), 0.15);
+    color: var(--sp-primary);
+}
+
+a,
+button {
+    transition: all .2s ease;
+}
+
+/* -------------------------------------------
+   Brand text/background helpers
+------------------------------------------- */
+.text-brand {
+    color: var(--sp-primary);
+}
+
+.text-brand-accent {
+    color: var(--sp-accent);
+}
+
+.text-brand-light {
+    color: var(--sp-light);
+}
+
+.bg-brand {
+    background-color: var(--sp-primary-alt);
+}
+
+.border-brand-light {
+    border-color: var(--sp-light);
+}
+
+.brand-gradient {
+    background-image: linear-gradient(135deg, var(--sp-primary-alt), var(--sp-primary));
+}
+
+/* Full-page color overlay (no image) */
+.brand-page-overlay {
+    background: linear-gradient(135deg,
+            rgba(var(--sp-primary-rgb), 0.80),
+            rgba(var(--sp-primary-alt-rgb), 0.80));
+}
+
+/* -------------------------------------------
+   Frosted glass cards (auth, panels)
+------------------------------------------- */
+.glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow:
+        0 20px 60px rgba(var(--sp-primary-rgb), 0.22),
+        0 6px 18px rgba(0, 0, 0, 0.06);
+    border-radius: 1.25rem;
+    /* 2xl rounded look */
+}
+
+/* -------------------------------------------
+   Brand buttons
+------------------------------------------- */
+.btn-brand {
+    color: #fff;
+    background-image: linear-gradient(135deg, var(--sp-primary-alt), var(--sp-primary));
+    box-shadow: 0 10px 26px rgba(var(--sp-primary-alt-rgb), 0.45);
+}
+
+.btn-brand:hover {
+    filter: brightness(1.03);
+}
+
+.btn-outline-brand {
+    color: var(--sp-primary);
+    background: #fff;
+    border: 1px solid var(--sp-light);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.btn-outline-brand:hover {
+    background: #f8fafc;
+}
+
+.btn-danger-outline {
+    color: #dc2626;
+    background: #fff;
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.08);
+}
+
+.btn-brand:disabled,
+.btn-outline-brand:disabled,
+.btn-danger-outline:disabled {
+    opacity: .6;
+}
+
+/* -------------------------------------------
+   Navbar styles (for the stylish variant)
+------------------------------------------- */
+/* Gradient bar behind navbar */
+.navbar-bg {
+    background-image: linear-gradient(90deg, var(--sp-primary), var(--sp-primary-alt));
+}
+
+/* Glass capsule for desktop nav group */
+.nav-glass {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-radius: 1.25rem;
+}
+
+/* Shadow when scrolled (toggle via JS/state) */
+.nav-shadow {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Active “pill” under nav items (used with Framer Motion layoutId) */
+.nav-pill {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(var(--sp-primary-rgb), 0.10);
+    border-radius: .75rem;
+}
+
+
+/* Subtle hover underline for nav items */
+.brand-underline {
+    position: relative;
+}
+
+.brand-underline::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 4px;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, var(--sp-light), transparent);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: .18s ease;
+}
+
+.brand-underline:hover::after {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Divider & chips for consistent accents */
+.brand-divider {
+    height: 1px;
+    background-color: var(--sp-light);
+}
+
+.brand-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border: 1px solid var(--sp-light);
+    padding: .25rem .6rem;
+    border-radius: 9999px;
+    font-size: .75rem;
+    line-height: 1rem;
+    color: #334155;
+}
+
+/* -------------------------------------------
+   Motion preferences (reduce if requested)
+------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
