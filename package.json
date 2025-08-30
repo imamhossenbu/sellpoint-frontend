@@ -26,5 +26,9 @@
     "sweetalert2": "^11.22.5",
     "swr": "^2.3.0",
     "tailwindcss": "^4.1.12"
+  },
+  "devDependencies": {
+    "eslint": "^9.34.0",
+    "eslint-config-next": "^15.5.2"
   }
 }
