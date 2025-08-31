@@ -4,6 +4,7 @@ import './globals.css';
 import Toaster from '../components/Toaster';
 import { AuthProvider } from '../context/AuthContext';
 import AppShell from '@/components/AppShell';
+import Loading from '@/components/Loading'; // ← add
 import { Suspense } from "react";
 
 export default function RootLayout({ children }) {
@@ -11,10 +12,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <Suspense fallback={<div className="p-4">Loading dashboard…</div>}>
+          <Suspense fallback={<Loading />}>
             <AppShell>{children}</AppShell>
           </Suspense>
-
           <Toaster />
         </AuthProvider>
       </body>

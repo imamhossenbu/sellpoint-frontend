@@ -1,4 +1,15 @@
 @import "tailwindcss";
+@import "react-loading-skeleton/dist/skeleton.css";
+
+
+
+
+
+
+html,
+body {
+    height: 100%;
+}
 
 /* -------------------------------------------
    SellPoint brand palette as CSS variables

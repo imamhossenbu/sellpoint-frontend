@@ -7,7 +7,7 @@ import heroImage from "@/public/blog-hero.jpg"; // reuse an image in /public
 export const dynamic = "force-dynamic";
 
 async function fetchPlans() {
-    const base = process.env.NEXT_PUBLIC_API_BASE || "";
+    const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
     try {
         const res = await fetch(`${base}/plans`, { next: { revalidate: 0 } });
         if (!res.ok) throw new Error("Failed to load plans");

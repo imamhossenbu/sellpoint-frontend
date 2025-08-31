@@ -643,7 +643,7 @@ function formatNum(n) { try { return new Intl.NumberFormat().format(n || 0); } c
 function formatDate(d) { if (!d) return ""; const dt = new Date(d); if (isNaN(dt)) return ""; return dt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
 function formatDateTime(d) { if (!d) return ""; const dt = new Date(d); if (isNaN(dt)) return ""; return dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || "";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000";
 function profileUrl(user) { if (!user?._id) return null; if (user.profileUrl) return user.profileUrl; if (!API_BASE) return null; const base = API_BASE.replace(/\/+$/, ""); return `${base}/users/${user._id}`; }
 function Avatar({ name = "User", url, size = 40 }) {
     const s = Math.max(32, Number(size) || 40);

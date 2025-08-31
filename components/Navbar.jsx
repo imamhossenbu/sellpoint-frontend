@@ -15,10 +15,10 @@ import { api } from '@/lib/api';
 import Image from 'next/image';
 import logo from '../public/fav.png';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
 const SOCKET_URL =
     process.env.NEXT_PUBLIC_SOCKET_URL ||
-    (typeof window !== 'undefined' ? window.location.origin : '');
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
 
 const Badge = ({ value }) => {
     if (!value) return null;

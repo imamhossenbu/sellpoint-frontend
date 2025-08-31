@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Mail, Send, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
 
 export default function ForgotPasswordPage() {
     const { register, handleSubmit, formState: { errors, isSubmitting } } =

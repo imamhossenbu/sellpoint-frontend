@@ -14,7 +14,7 @@ import WishlistHero from "@/components/WishlistHero";
 const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_BASE ||
-    "";
+    "http://localhost:5000";
 
 const strip = (s = "") => String(s).trim();
 const isHttp = (u) => /^https?:\/\//i.test(u);
