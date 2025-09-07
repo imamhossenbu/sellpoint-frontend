@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, Loader2, Send, Trash2, Pencil } from "lucide-react";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+// Socket URL
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
 
 export default function ChatThreadPage() {
     const { id } = useParams();
@@ -30,7 +31,9 @@ export default function ChatThreadPage() {
     const socketRef = useRef(null);
     const seenRef = useRef(new Set());
     const bottomRef = useRef(null);
+    const listingIdRef = useRef("");
 
+    // Load conversation meta
     useEffect(() => {
         if (!user) return;
         let alive = true;
@@ -51,9 +54,12 @@ export default function ChatThreadPage() {
                 alive && setLoadingConv(false);
             }
         })();
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, [user, id]);
 
+    // Load thread messages (REST)
     useEffect(() => {
         if (!user || !id) return;
         let alive = true;
@@ -72,33 +78,75 @@ export default function ChatThreadPage() {
                         m._id ? `id:${m._id}` : `sig:${m.from}|${m.to}|${m.text}|${m.createdAt}`
                     )
                 );
-                try { await api.post(`/chat/${id}/read`, null, { withCredentials: true }); } catch { }
+                try {
+                    await api.post(`/chat/${id}/read`, null, { withCredentials: true });
+                } catch { }
             } finally {
                 alive && setLoadingMsgs(false);
                 setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
             }
         })();
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, [user, id]);
 
+    // Derive other participant and listingId
+    const other = useMemo(() => getOtherParticipant(conv, myId), [conv, myId]);
+    const listingId = useMemo(
+        () => String((conv?.listing?._id ?? conv?.listing) || ""),
+        [conv]
+    );
+
+    // Keep latest listingId for socket closures
+    useEffect(() => {
+        listingIdRef.current = listingId;
+        if (socketRef.current && listingId) {
+            socketRef.current.emit("join", { listingId });
+        }
+    }, [listingId]);
+
+    // Socket connect + listeners (new/updated/deleted)
     useEffect(() => {
         if (!myId) return;
+
         const s = io(SOCKET_URL, {
-            transports: ["websocket", "polling"],
-            withCredentials: true,
-            auth: { userId: myId },
             path: "/socket.io",
+            transports: ["websocket"],   // fewer handshake edge-cases
+            withCredentials: false,      // set true only if you rely on cookies + server CORS credentials:true
+            auth: { userId: myId },
         });
         socketRef.current = s;
 
+        s.on("connect", () => {
+            const lid = listingIdRef.current;
+            if (lid) s.emit("join", { listingId: lid });
+        });
+
         s.on("message:new", (msg) => {
-            if (String(msg.conversation || "") !== String(id)) return;
-            if (String(msg.from) === myId) return; // my own message comes via ACK
-            const key = msg._id ? `id:${msg._id}` : `sig:${msg.from}|${msg.to}|${msg.text}|${msg.createdAt}`;
+            const fromOther = String(msg.from) !== myId;
+            const lid = listingIdRef.current;
+            const sameListing = !lid || String(msg.listing || "") === String(lid);
+
+            if (!fromOther) return;
+            if (!sameListing) return;
+
+            const key = msg._id
+                ? `id:${msg._id}`
+                : `sig:${msg.from}|${msg.to}|${msg.text}|${msg.createdAt}`;
             if (seenRef.current.has(key)) return;
             seenRef.current.add(key);
             setMessages((m) => [...m, msg]);
             setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 10);
+        });
+
+        // Listen for updated messages
+        s.on("message:updated", (updatedMsg) => {
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg._id === updatedMsg._id ? { ...msg, text: updatedMsg.text, editedAt: updatedMsg.editedAt } : msg
+                )
+            );
         });
 
         return () => {
@@ -106,32 +154,37 @@ export default function ChatThreadPage() {
             s.disconnect();
             socketRef.current = null;
         };
-    }, [myId, id]);
+    }, [myId]);
 
-    const other = useMemo(() => getOtherParticipant(conv, myId), [conv, myId]);
-
+    // Send message (payload your socket server expects)
     const send = useCallback(() => {
         const text = draft.trim();
         if (!text || !socketRef.current || !conv) return;
+        if (!other?._id) return; // need recipient
+
         setSending(true);
         socketRef.current.emit(
             "message:send",
-            { conversationId: conv._id, text },
+            { listingId: listingId || null, to: String(other._id), text },
             (res) => {
                 setSending(false);
                 if (res?.ok && res.msg) {
                     const msg = res.msg;
-                    const key = msg._id ? `id:${msg._id}` : `sig:${msg.from}|${msg.to}|${msg.text}|${msg.createdAt}`;
+                    const key = msg._id
+                        ? `id:${msg._id}`
+                        : `sig:${msg.from}|${msg.to}|${msg.text}|${msg.createdAt}`;
                     if (!seenRef.current.has(key)) {
                         seenRef.current.add(key);
                         setMessages((m) => [...m, msg]);
                     }
                     setDraft("");
                     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 10);
+                } else {
+                    console.error("send failed:", res?.error);
                 }
             }
         );
-    }, [draft, conv]);
+    }, [draft, conv, other?._id, listingId]);
 
     const beginEdit = (m) => {
         setEditingId(m._id);
@@ -237,7 +290,7 @@ export default function ChatThreadPage() {
 }
 
 function HeaderListing({ listing }) {
-    const src = listing?.coverUrl || listing?.images?.[0] || "";
+    const src = (listing && (listing.coverUrl || (Array.isArray(listing.images) && listing.images[0]))) || "";
     const s = 36;
     if (!src) {
         return (
@@ -253,7 +306,19 @@ function HeaderListing({ listing }) {
     );
 }
 
-function Bubble({ mine, text, at, onEdit, onDelete, isEditing, editDraft, setEditDraft, onSaveEdit, onCancelEdit }) {
+function Bubble({
+    mine,
+    text,
+    at,
+    onEdit,
+    onDelete,
+    isEditing,
+    editDraft,
+    setEditDraft,
+    onSaveEdit,
+    onCancelEdit,
+    editedAt,
+}) {
     return (
         <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-1.5`}>
             <div
@@ -273,13 +338,17 @@ function Bubble({ mine, text, at, onEdit, onDelete, isEditing, editDraft, setEdi
                             <button onClick={onSaveEdit} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white/20 hover:bg-white/30">
                                 <Pencil className="w-3 h-3" /> Save
                             </button>
-                            <button onClick={onCancelEdit} className="px-2 py-1 rounded bg-white/10 hover:bg-white/20">Cancel</button>
+                            <button onClick={onCancelEdit} className="px-2 py-1 rounded bg-white/10 hover:bg-white/20">
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 ) : (
                     <>
                         <div className="whitespace-pre-wrap break-words">{text}</div>
-                        <div className={`mt-1 text-[10px] ${mine ? "text-white/80" : "text-slate-600"}`}>{formatTime(at)}</div>
+                        <div className={`mt-1 text-[10px] ${mine ? "text-white/80" : "text-slate-600"}`}>
+                            {formatTime(at)} {editedAt && <span className="text-xs">(edited)</span>}
+                        </div>
                         {mine && (
                             <div className="mt-1 flex gap-2 text-[11px] opacity-90">
                                 <button onClick={onEdit} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20">
@@ -304,6 +373,6 @@ function getOtherParticipant(conv, myId) {
 function formatTime(d) {
     if (!d) return "";
     const dt = new Date(d);
-    if (isNaN(dt)) return "";
+    if (isNaN(+dt)) return "";
     return dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
